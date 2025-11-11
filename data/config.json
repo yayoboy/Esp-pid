@@ -1,0 +1,14 @@
+{
+  "pid": {
+    "kp": 2.0,
+    "ki": 5.0,
+    "kd": 1.0,
+    "setpoint": 25.0,
+    "autoMode": true
+  },
+  "wifi": {
+    "ssid": "ESP32-PID-AP",
+    "password": "pid12345",
+    "hostname": "esp32-pid"
+  }
+}
