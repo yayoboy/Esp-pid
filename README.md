@@ -1,21 +1,32 @@
 # ESP32 PID Controller
 
-Un controller PID completo basato su ESP32 con supporto per display multipli, vari sensori, interfaccia web e aggiornamento OTA.
+Un controller PID professionale basato su ESP32 con supporto per display multipli, sensori di temperatura avanzati, calibrazione, interfaccia web e aggiornamento OTA.
 
 ## Caratteristiche
 
-- **Controller PID** completo e configurabile
+- **Controller PID** completo e configurabile con anti-windup
 - **Supporto Display Multipli**:
   - TFT Touch Display 240x320 (ILI9341/ST7789)
-  - OLED 0.96" I2C (SSD1315) con tastiera 4x4
-- **Sensori Supportati**:
-  - DHT22 (Temperatura e Umidità)
-  - BME280 (Temperatura, Umidità, Pressione)
+  - OLED 0.96" I2C (SSD1315/SSD1306) con tastiera 4x4
+- **Sensori di Temperatura Supportati**:
+  - DHT22 (Temperatura e Umidità: -40°C a +80°C)
+  - BME280 (Temperatura, Umidità, Pressione: -40°C a +85°C)
+  - **MAX31855** (Termocoppia tipo K: -200°C a +1350°C) ⚡ NUOVO
+  - **MAX6675** (Termocoppia tipo K: 0°C a +1024°C) ⚡ NUOVO
+  - **DS18B20** (OneWire waterproof: -55°C a +125°C) ⚡ NUOVO
   - Encoder Rotativo (Posizione)
+- **Sistema di Calibrazione Avanzato** ⚡ NUOVO:
+  - Calibrazione manuale (offset e scale)
+  - Auto-calibrazione con riferimento noto
+  - Compensazione errori del sensore
+- **Controllo Output Multiplo**:
+  - Output PWM per controllo continuo
+  - **4 Relé indipendenti** per carichi ON/OFF ⚡ NUOVO
+  - Modalità riscaldamento, raffreddamento o dual-mode
+  - Time proportioning per controllo fine
 - **Interfaccia Web** moderna e responsive per configurazione e monitoraggio
 - **OTA Update** (Over-The-Air) per aggiornamenti firmware remoti
 - **Configurazione Persistente** su LittleFS
-- **Output PWM** per controllo attuatori
 
 ## Hardware Richiesto
 
@@ -32,10 +43,25 @@ Un controller PID completo basato su ESP32 con supporto per display multipli, va
 - Display OLED 0.96" I2C (SSD1315/SSD1306)
 - Tastiera 4x4 opzionale
 
-### Sensori (opzionali)
-- DHT22 (Temperatura/Umidità)
+### Sensori di Temperatura (scegliere uno o più)
+**Sensori Standard**:
+- DHT22 (Temperatura/Umidità: -40°C a +80°C)
 - BME280 (Temperatura/Umidità/Pressione) via I2C
+
+**Termocoppie per Alte Temperature** ⚡ NUOVO:
+- MAX31855 + Termocoppia tipo K (-200°C a +1350°C)
+- MAX6675 + Termocoppia tipo K (0°C a +1024°C)
+
+**Sensore Digitale Waterproof** ⚡ NUOVO:
+- DS18B20 OneWire (-55°C a +125°C)
+- Supporto multi-sensore sullo stesso bus
+
+**Altri Input**:
 - Encoder Rotativo (per input posizione)
+
+### Controllo Output
+- **PWM**: 1 canale per controllo continuo (ventole, dimmer)
+- **Relé**: 4 canali per carichi ON/OFF (riscaldatori, motori, luci)
 
 ## Schema Collegamenti
 
@@ -105,6 +131,40 @@ GPIO 25   -->  Control Input
 GND       -->  GND
 ```
 
+**Termocoppie (MAX31855/MAX6675):** ⚡ NUOVO
+```
+ESP32          MAX31855      Termocoppia
+-----          --------      -----------
+GPIO 5    -->  CS
+GPIO 18   -->  SCK
+GPIO 19   -->  MISO (SO)
+3.3V      -->  VCC
+GND       -->  GND
+              T+ (giallo) <-- Tipo K +
+              T- (rosso)  <-- Tipo K -
+```
+
+**DS18B20 (OneWire):** ⚡ NUOVO
+```
+ESP32          DS18B20
+-----          -------
+GPIO 26   -->  DATA (con pull-up 4.7kΩ a 3.3V)
+3.3V      -->  VCC
+GND       -->  GND
+```
+
+**Relé (4 canali):** ⚡ NUOVO
+```
+ESP32          Modulo Relé
+-----          -----------
+GPIO 27   -->  IN1 (Riscaldamento)
+GPIO 14   -->  IN2 (Raffreddamento/Ventola)
+GPIO 12   -->  IN3 (Allarme/Aux)
+GPIO 13   -->  IN4 (Spare)
+5V        -->  VCC
+GND       -->  GND
+```
+
 ## Configurazione Software
 
 ### 1. Selezione Display
@@ -166,9 +226,30 @@ pio device monitor
 ### Primo Avvio
 
 1. Alimentare l'ESP32
-2. Il sistema si connette al WiFi configurato
-3. Se la connessione fallisce, viene creato un Access Point
-4. L'indirizzo IP viene mostrato sul display e sulla seriale
+2. Il sistema rileva automaticamente i sensori collegati
+3. Selezione automatica del primo sensore disponibile
+4. Connessione al WiFi configurato
+5. Se la connessione fallisce, viene creato un Access Point
+6. L'indirizzo IP viene mostrato sul display e sulla seriale
+
+**Output Monitor Seriale**:
+```
+========================================
+ESP32 PID Controller
+========================================
+
+Initializing sensors...
+========================================
+[✓] DHT22 sensor detected
+[✗] BME280 sensor not found
+[✓] MAX31855 thermocouple detected
+[✗] MAX6675 thermocouple not found
+[✗] DS18B20 sensor not found
+[✓] Encoder initialized
+========================================
+Active Sensor: MAX31855 K-Type
+========================================
+```
 
 ### Interfaccia Web
 
@@ -190,8 +271,53 @@ L'interfaccia web permette di:
 Il display mostra:
 - **Pagina Principale**: Setpoint, valore corrente, output, modalità
 - **Pagina Tuning**: Parametri PID
-- **Pagina Sensori**: Letture sensori
+- **Pagina Sensori**: Letture sensori (temp, umidità, posizione)
 - **Pagina Network**: Stato WiFi e IP
+
+### Calibrazione Sensori ⚡ NUOVO
+
+**Auto-Calibrazione con Riferimento**:
+1. Posizionare il sensore in ambiente con temperatura nota (es. 25.0°C)
+2. Attendere stabilizzazione (almeno 5 minuti)
+3. Avviare via seriale:
+```cpp
+sensors.startAutoCalibration(25.0);  // Riferimento: 25.0°C
+```
+4. Sistema raccoglie 100 campioni
+5. Calcola e applica offset automaticamente
+
+**Via Web**:
+```json
+{
+  "cmd": "startAutoCalibration",
+  "reference": 25.0
+}
+```
+
+**Calibrazione Manuale**:
+```cpp
+sensors.setCalibration(+1.5, 1.0);  // Offset +1.5°C, scale 1.0
+sensors.enableCalibration(true);
+```
+
+### Controllo Relé ⚡ NUOVO
+
+**Modalità Riscaldamento Solo**:
+```cpp
+relayController.setMode(RELAY_HEATING_ONLY);
+relayController.setHysteresis(0.5);  // ±0.5°C
+```
+
+**Modalità Dual (Riscaldamento + Raffreddamento)**:
+```cpp
+relayController.setMode(RELAY_DUAL_MODE);
+relayController.setHysteresis(1.0);  // Deadband 1°C
+```
+
+**Time Proportioning** (PWM lento):
+```cpp
+relayController.enableTimeProportioning(true, 10000);  // 10s window
+```
 
 ### OTA Update
 
@@ -304,6 +430,34 @@ I dati di configurazione sono salvati in `/config.json` su LittleFS:
 }
 ```
 
+## Nuove Funzionalità v2.0 ⚡
+
+### Sensori Avanzati
+- **Termocoppie MAX31855/MAX6675**: Misure fino a 1350°C per forni e applicazioni industriali
+- **DS18B20**: Sensore waterproof con supporto multi-sensore OneWire
+- **Rilevamento Automatico**: Il sistema rileva tutti i sensori collegati all'avvio
+- **Selezione Dinamica**: Cambio sensore attivo senza riavvio
+
+### Sistema di Calibrazione
+- **Auto-Calibrazione**: Sistema automatico con riferimento noto (100 campioni)
+- **Calibrazione Manuale**: Offset e scale regolabili
+- **Compensazione in Tempo Reale**: Applicata a tutte le letture
+
+### Controllo Relé
+- **4 Relé Indipendenti**: Controllo carichi ON/OFF fino a 10A
+- **3 Modalità Operative**: Heating-only, Cooling-only, Dual-mode
+- **Time Proportioning**: PWM lento per controllo fine senza hardware PWM
+- **Protezione Anti-ciclaggio**: Tempo minimo tra switching per proteggere relé e compressori
+
+## Documentazione Completa
+
+📚 **Guide Dettagliate**:
+- **[SENSORS.md](docs/SENSORS.md)** - Guida completa sensori (termocoppie, DS18B20, calibrazione)
+- **[RELAY.md](docs/RELAY.md)** - Controllo relé e applicazioni pratiche
+- **[WIRING.md](docs/WIRING.md)** - Schemi collegamenti hardware dettagliati
+- **[EXAMPLES.md](docs/EXAMPLES.md)** - Esempi applicazioni reali
+- **[API.md](docs/API.md)** - Documentazione API REST e WebSocket
+
 ## Troubleshooting
 
 ### Display non funziona
@@ -317,6 +471,15 @@ I dati di configurazione sono salvati in `/config.json` su LittleFS:
 - Controllare alimentazione (3.3V, non 5V!)
 - Verificare collegamenti I2C (pull-up necessari)
 - Controllare log seriale per messaggi di errore
+- **Termocoppie**: Verificare polarità (giallo=+, rosso=-)
+- **DS18B20**: Resistenza pull-up 4.7kΩ OBBLIGATORIA
+
+### Sensori con letture errate
+
+- **Utilizzare la calibrazione**: Auto-calibrazione con riferimento noto
+- **Verificare GND comune**: Tutti i sensori devono condividere GND
+- **Termocoppie**: Cavi corti, lontano da interferenze
+- **DS18B20**: Limitare lunghezza cavo (< 20m senza schermatura)
 
 ### WiFi non si connette
 
@@ -329,6 +492,13 @@ I dati di configurazione sono salvati in `/config.json` su LittleFS:
 - Verificare che ESP32 e PC siano sulla stessa rete
 - Controllare il nome host: `esp32-pid.local`
 - Su Windows, potrebbe essere necessario installare Bonjour
+
+### Relé non scattano
+
+- Verificare alimentazione modulo (5V, 2A minimo)
+- Testare comando manuale: `relayController.setRelay(1, true)`
+- Controllare che sia impostata una modalità: `setMode(RELAY_HEATING_ONLY)`
+- Verificare pin GPIO corretti in `config.h`
 
 ## Licenza
 

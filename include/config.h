@@ -42,8 +42,20 @@
 #define ENCODER_PIN_A 34    // Rotary encoder for position
 #define ENCODER_PIN_B 35
 
-// Output Control Pin (PWM for PID output)
+// Thermocouple Pins (MAX6675/MAX31855)
+#define THERMO_CS     5     // Chip Select
+#define THERMO_SCK    18    // Clock (shared with SPI)
+#define THERMO_MISO   19    // Data Out (shared with SPI)
+
+// DS18B20 OneWire Pin
+#define DS18B20_PIN   26    // OneWire bus for DS18B20
+
+// Output Control Pins
 #define PID_OUTPUT_PIN 25   // PWM output for control
+#define RELAY_PIN_1    27   // Relay 1 (Heating)
+#define RELAY_PIN_2    14   // Relay 2 (Cooling/Fan)
+#define RELAY_PIN_3    12   // Relay 3 (Alarm/Aux)
+#define RELAY_PIN_4    13   // Relay 4 (Spare)
 
 // PID Default Values
 #define DEFAULT_KP     2.0
@@ -51,6 +63,15 @@
 #define DEFAULT_KD     1.0
 #define DEFAULT_SETPOINT 25.0
 #define PID_SAMPLE_TIME  100  // milliseconds
+
+// Output Mode
+#define OUTPUT_MODE_PWM    0
+#define OUTPUT_MODE_RELAY  1
+#define OUTPUT_MODE_DUAL   2  // Both heating and cooling relays
+
+// Relay Control
+#define RELAY_HYSTERESIS 0.5  // Hysteresis for relay control (°C)
+#define RELAY_MIN_CYCLE  1000 // Minimum relay cycle time (ms)
 
 // Web Server
 #define WEB_SERVER_PORT 80

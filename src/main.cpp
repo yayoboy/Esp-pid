@@ -7,6 +7,7 @@
 #include "WebServer.h"
 #include "OTAManager.h"
 #include "ConfigManager.h"
+#include "RelayController.h"
 
 // Global objects
 PIDController pid;
@@ -15,6 +16,7 @@ DisplayManager display;
 WebServerManager webServer;
 OTAManager ota;
 ConfigManager configManager;
+RelayController relayController;
 
 // Variables
 double currentInput = 0.0;
@@ -68,6 +70,11 @@ void setup() {
     // Setup PWM output
     ledcSetup(0, 5000, 8); // Channel 0, 5kHz, 8-bit resolution
     ledcAttachPin(PID_OUTPUT_PIN, 0);
+
+    // Initialize Relay Controller
+    Serial.println("Initializing relay controller...");
+    relayController.begin();
+    relayController.setMode(RELAY_HEATING_ONLY); // Default mode
 
     // Initialize WiFi
     display.drawMessage("Connecting WiFi...");
@@ -171,6 +178,9 @@ void updatePID() {
 
         // Apply output to PWM
         ledcWrite(0, (int)currentOutput);
+
+        // Update relay controller
+        relayController.update(currentInput, pid.getSetpoint(), currentOutput);
     }
 }
 
