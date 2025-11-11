@@ -1,6 +1,6 @@
 # ESP32 PID Controller
 
-Un controller PID professionale basato su ESP32 con supporto per display multipli, sensori di temperatura avanzati, calibrazione, interfaccia web e aggiornamento OTA.
+Un controller PID professionale basato su ESP32 con supporto per display multipli, sensori di temperatura avanzati, calibrazione, configurazione pin dinamica, interfaccia web e aggiornamento OTA.
 
 ## Caratteristiche
 
@@ -11,19 +11,24 @@ Un controller PID professionale basato su ESP32 con supporto per display multipl
 - **Sensori di Temperatura Supportati**:
   - DHT22 (Temperatura e Umidità: -40°C a +80°C)
   - BME280 (Temperatura, Umidità, Pressione: -40°C a +85°C)
-  - **MAX31855** (Termocoppia tipo K: -200°C a +1350°C) ⚡ NUOVO
-  - **MAX6675** (Termocoppia tipo K: 0°C a +1024°C) ⚡ NUOVO
-  - **DS18B20** (OneWire waterproof: -55°C a +125°C) ⚡ NUOVO
+  - **MAX31855** (Termocoppia tipo K: -200°C a +1350°C) ⚡
+  - **MAX6675** (Termocoppia tipo K: 0°C a +1024°C) ⚡
+  - **DS18B20** (OneWire waterproof: -55°C a +125°C) ⚡
   - Encoder Rotativo (Posizione)
-- **Sistema di Calibrazione Avanzato** ⚡ NUOVO:
+- **Sistema di Calibrazione Avanzato** ⚡:
   - Calibrazione manuale (offset e scale)
   - Auto-calibrazione con riferimento noto
   - Compensazione errori del sensore
 - **Controllo Output Multiplo**:
   - Output PWM per controllo continuo
-  - **4 Relé indipendenti** per carichi ON/OFF ⚡ NUOVO
+  - **4 Relé indipendenti** per carichi ON/OFF ⚡
   - Modalità riscaldamento, raffreddamento o dual-mode
   - Time proportioning per controllo fine
+- **Configurazione Pin Dinamica** 🆕:
+  - Tutti i pin configurabili via interfaccia web
+  - Validazione automatica pin ESP32
+  - Supporto GPIO input-only (34-39)
+  - Salvataggio persistente configurazione
 - **Interfaccia Web** moderna e responsive per configurazione e monitoraggio
 - **OTA Update** (Over-The-Air) per aggiornamenti firmware remoti
 - **Configurazione Persistente** su LittleFS
@@ -265,6 +270,7 @@ L'interfaccia web permette di:
 - Impostare il setpoint
 - Cambiare modalità (Auto/Manuale)
 - Visualizzare dati sensori
+- **Configurare i pin GPIO** 🆕 - `http://[IP]/pinconfig`
 
 ### Display Locale
 
@@ -318,6 +324,29 @@ relayController.setHysteresis(1.0);  // Deadband 1°C
 ```cpp
 relayController.enableTimeProportioning(true, 10000);  // 10s window
 ```
+
+### Configurazione Pin 🆕 NUOVO
+
+Accedere a: `http://[ESP32_IP]/pinconfig`
+
+**Funzionalità**:
+- Modifica tutti i pin GPIO via web
+- Validazione automatica (previene uso pin riservati 6-11)
+- Supporto GPIO input-only (34-39) per encoder
+- Riavvio automatico dopo salvataggio
+- Guida pin ESP32 integrata
+
+**Esempio modifica via API**:
+```json
+POST /api/pins
+{
+  "dht": 17,
+  "relay_1": 32,
+  "ds18b20": 4
+}
+```
+
+**Riavvio richiesto**: Dopo modifica pin, ESP32 si riavvia automaticamente.
 
 ### OTA Update
 
@@ -454,6 +483,7 @@ I dati di configurazione sono salvati in `/config.json` su LittleFS:
 📚 **Guide Dettagliate**:
 - **[SENSORS.md](docs/SENSORS.md)** - Guida completa sensori (termocoppie, DS18B20, calibrazione)
 - **[RELAY.md](docs/RELAY.md)** - Controllo relé e applicazioni pratiche
+- **[PIN_CONFIG_API.md](docs/PIN_CONFIG_API.md)** 🆕 - Configurazione pin dinamica via web
 - **[WIRING.md](docs/WIRING.md)** - Schemi collegamenti hardware dettagliati
 - **[EXAMPLES.md](docs/EXAMPLES.md)** - Esempi applicazioni reali
 - **[API.md](docs/API.md)** - Documentazione API REST e WebSocket
