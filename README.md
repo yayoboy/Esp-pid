@@ -32,7 +32,7 @@ Un controller PID professionale basato su ESP32 con supporto per display multipl
 - **Captive Portal WiFi** ✨ NUOVO:
   - Configurazione WiFi senza codice sorgente
   - Portale automatico al primo avvio
-  - Scan reti disponibili con selezione touch
+  - Scan reti WiFi con selezione tramite browser (smartphone/PC)
   - Reset credenziali via pulsante BOOT (5s)
   - Interfaccia web moderna e mobile-friendly
 - **Interfaccia Web** moderna e responsive per configurazione e monitoraggio

@@ -62,7 +62,9 @@ When in AP mode, the ESP32 creates a WiFi network with these credentials:
 
 ## Visual Interface
 
-The captive portal features a modern, gradient design with:
+**Important Note**: The captive portal is a web interface accessed via browser on your smartphone, tablet, or computer - NOT on the ESP32's physical display. The ESP32 display (TFT touch or OLED with keypad) shows only status information (WiFi status, IP address, etc.). Configuration is done through your device's web browser.
+
+The captive portal web interface features a modern, gradient design with:
 
 - **Network List**: Shows all available networks with signal strength
 - **Visual Feedback**: Selected network is highlighted
@@ -280,10 +282,16 @@ curl http://192.168.4.1/scan
 
 ### Display Integration
 
-The display shows WiFi status:
-- "WiFi Setup..." during captive portal
-- "Connected" with IP address when connected
-- "AP Mode" when in setup mode
+The ESP32's physical display (TFT or OLED) shows WiFi status information only:
+- "WiFi Setup..." during captive portal initialization
+- "Connected" with IP address when connected to network
+- "AP Mode" when in setup mode with AP IP address (192.168.4.1)
+
+**Note**: The physical display does NOT provide WiFi configuration capabilities. Whether you have:
+- **TFT Touch Display (240x320)**: Touch input is used for PID control, not WiFi setup
+- **OLED Display (0.96") + 4x4 Keypad**: Buttons are used for local navigation, not WiFi setup
+
+WiFi configuration is done exclusively through the web browser interface on a separate device (smartphone, tablet, or computer) that connects to the ESP32's Access Point.
 
 ### Web Interface Integration
 
