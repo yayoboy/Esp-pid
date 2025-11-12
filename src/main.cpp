@@ -8,6 +8,7 @@
 #include "OTAManager.h"
 #include "ConfigManager.h"
 #include "RelayController.h"
+#include "WiFiManager.h"
 
 // Global objects
 PIDController pid;
@@ -17,6 +18,7 @@ WebServerManager webServer;
 OTAManager ota;
 ConfigManager configManager;
 RelayController relayController;
+WiFiManager wifiManager(&configManager);
 
 // Variables
 double currentInput = 0.0;
@@ -30,7 +32,6 @@ const unsigned int DISPLAY_UPDATE_INTERVAL = 500; // 500ms
 const unsigned int WEB_UPDATE_INTERVAL = 1000;   // 1s
 
 // Function declarations
-void setupWiFi();
 void updatePID();
 void updateDisplay();
 void updateWebClients();
@@ -76,13 +77,19 @@ void setup() {
     relayController.begin();
     relayController.setMode(RELAY_HEATING_ONLY); // Default mode
 
-    // Initialize WiFi
-    display.drawMessage("Connecting WiFi...");
-    setupWiFi();
+    // Initialize WiFi with Captive Portal
+    Serial.println("Initializing WiFi...");
+    display.drawMessage("WiFi Setup...");
+    wifiManager.begin();
 
-    // Initialize OTA
-    Serial.println("Initializing OTA...");
-    ota.begin();
+    // Wait a moment for WiFi to stabilize
+    delay(2000);
+
+    // Initialize OTA (only if connected to WiFi)
+    if (wifiManager.getStatus() == WIFI_CONNECTED) {
+        Serial.println("Initializing OTA...");
+        ota.begin();
+    }
 
     // Initialize Web Server
     Serial.println("Initializing web server...");
@@ -94,10 +101,20 @@ void setup() {
     Serial.println("\n========================================");
     Serial.println("System Ready!");
     Serial.println("========================================");
+    Serial.print("WiFi Status: ");
+    Serial.println(wifiManager.getStatusString());
     Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
-    Serial.println("Web interface: http://" + WiFi.localIP().toString());
-    Serial.println("OTA hostname: " + String(HOSTNAME));
+    Serial.println(wifiManager.getIPAddress());
+
+    if (wifiManager.getStatus() == WIFI_CONNECTED) {
+        Serial.println("Web interface: http://" + wifiManager.getIPAddress());
+        Serial.println("OTA hostname: " + String(HOSTNAME));
+    } else if (wifiManager.getStatus() == WIFI_AP_MODE) {
+        Serial.println("Captive Portal active!");
+        Serial.println("Connect to WiFi: " + String(AP_SSID));
+        Serial.println("Password: " + String(AP_PASSWORD));
+        Serial.println("Configuration page: http://" + wifiManager.getIPAddress());
+    }
     Serial.println("========================================\n");
 
     lastPIDUpdate = millis();
@@ -108,8 +125,13 @@ void setup() {
 void loop() {
     unsigned long now = millis();
 
-    // Handle OTA updates
-    ota.handle();
+    // Update WiFi Manager (handles captive portal, reconnection, reset button)
+    wifiManager.update();
+
+    // Handle OTA updates (only if connected)
+    if (wifiManager.getStatus() == WIFI_CONNECTED) {
+        ota.handle();
+    }
 
     // Update sensors periodically
     sensors.update();
@@ -143,34 +165,7 @@ void loop() {
     delay(10); // Small delay to prevent watchdog issues
 }
 
-void setupWiFi() {
-    WiFiConfig wifiConfig = configManager.getWiFiConfig();
-
-    // Try to connect to WiFi
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.setHostname(wifiConfig.hostname);
-
-    Serial.printf("Connecting to WiFi: %s\n", wifiConfig.ssid);
-    WiFi.begin(wifiConfig.ssid, wifiConfig.password);
-
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\nWiFi connected!");
-        Serial.print("IP address: ");
-        Serial.println(WiFi.localIP());
-    } else {
-        Serial.println("\nFailed to connect to WiFi, starting AP mode");
-        WiFi.softAP(wifiConfig.ssid, wifiConfig.password);
-        Serial.print("AP IP address: ");
-        Serial.println(WiFi.softAPIP());
-    }
-}
+// setupWiFi() removed - now using WiFiManager with captive portal
 
 void updatePID() {
     if (pid.isAuto()) {
@@ -204,11 +199,9 @@ void updateDisplay() {
 
         case PAGE_NETWORK:
             {
-                String ip = WiFi.localIP().toString();
-                if (WiFi.status() != WL_CONNECTED) {
-                    ip = WiFi.softAPIP().toString();
-                }
-                display.showNetworkScreen(ip.c_str(), WiFi.status() == WL_CONNECTED);
+                String ip = wifiManager.getIPAddress();
+                bool connected = (wifiManager.getStatus() == WIFI_CONNECTED);
+                display.showNetworkScreen(ip.c_str(), connected);
             }
             break;
 

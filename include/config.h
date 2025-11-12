@@ -4,9 +4,12 @@
 #include <Arduino.h>
 
 // WiFi Configuration
-#define WIFI_SSID "ESP32-PID-AP"
-#define WIFI_PASSWORD "pid12345"
+#define AP_SSID "ESP32-PID-Setup"      // AP mode SSID for captive portal
+#define AP_PASSWORD "setup123"          // AP mode password (min 8 chars)
 #define HOSTNAME "esp32-pid"
+#define WIFI_CONNECT_TIMEOUT 20000      // 20 seconds timeout for WiFi connection
+#define CAPTIVE_PORTAL_TIMEOUT 300000   // 5 minutes - then retry saved credentials
+#define WIFI_RESET_PIN 0                // GPIO0 (BOOT button) - hold 5s to reset WiFi
 
 // Display Selection (uncomment one)
 #define USE_TFT_DISPLAY     // For ILI9341/ST7789 240x320

@@ -8,9 +8,9 @@ ConfigManager::ConfigManager() {
     pidConfig.setpoint = DEFAULT_SETPOINT;
     pidConfig.autoMode = true;
 
-    // Set WiFi defaults
-    strncpy(wifiConfig.ssid, WIFI_SSID, sizeof(wifiConfig.ssid));
-    strncpy(wifiConfig.password, WIFI_PASSWORD, sizeof(wifiConfig.password));
+    // Set WiFi defaults (empty - will trigger captive portal)
+    wifiConfig.ssid[0] = '\0';  // Empty SSID to trigger captive portal on first boot
+    wifiConfig.password[0] = '\0';
     strncpy(wifiConfig.hostname, HOSTNAME, sizeof(wifiConfig.hostname));
 
     // Set Pin defaults from config.h
@@ -83,9 +83,9 @@ bool ConfigManager::loadConfig() {
     pidConfig.setpoint = doc["pid"]["setpoint"] | DEFAULT_SETPOINT;
     pidConfig.autoMode = doc["pid"]["autoMode"] | true;
 
-    // Load WiFi config
-    strlcpy(wifiConfig.ssid, doc["wifi"]["ssid"] | WIFI_SSID, sizeof(wifiConfig.ssid));
-    strlcpy(wifiConfig.password, doc["wifi"]["password"] | WIFI_PASSWORD, sizeof(wifiConfig.password));
+    // Load WiFi config (empty defaults will trigger captive portal)
+    strlcpy(wifiConfig.ssid, doc["wifi"]["ssid"] | "", sizeof(wifiConfig.ssid));
+    strlcpy(wifiConfig.password, doc["wifi"]["password"] | "", sizeof(wifiConfig.password));
     strlcpy(wifiConfig.hostname, doc["wifi"]["hostname"] | HOSTNAME, sizeof(wifiConfig.hostname));
 
     // Load Pin config

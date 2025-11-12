@@ -29,6 +29,12 @@ Un controller PID professionale basato su ESP32 con supporto per display multipl
   - Validazione automatica pin ESP32
   - Supporto GPIO input-only (34-39)
   - Salvataggio persistente configurazione
+- **Captive Portal WiFi** ✨ NUOVO:
+  - Configurazione WiFi senza codice sorgente
+  - Portale automatico al primo avvio
+  - Scan reti disponibili con selezione touch
+  - Reset credenziali via pulsante BOOT (5s)
+  - Interfaccia web moderna e mobile-friendly
 - **Interfaccia Web** moderna e responsive per configurazione e monitoraggio
 - **OTA Update** (Over-The-Air) per aggiornamenti firmware remoti
 - **Configurazione Persistente** su LittleFS
@@ -230,12 +236,21 @@ pio device monitor
 
 ### Primo Avvio
 
-1. Alimentare l'ESP32
+1. **Alimentare l'ESP32**
 2. Il sistema rileva automaticamente i sensori collegati
 3. Selezione automatica del primo sensore disponibile
-4. Connessione al WiFi configurato
-5. Se la connessione fallisce, viene creato un Access Point
+4. **Configurazione WiFi Automatica** ✨:
+   - Al primo avvio (nessuna credenziale salvata), parte il **Captive Portal**
+   - ESP32 crea un Access Point WiFi: `ESP32-PID-Setup` (password: `setup123`)
+   - Connettiti all'AP con smartphone/computer
+   - Il browser aprirà automaticamente la pagina di configurazione
+   - Seleziona la tua rete WiFi dalla lista
+   - Inserisci la password e salva
+   - ESP32 si riavvia e si connette alla tua rete
+5. Se già configurato, si connette automaticamente alla rete salvata
 6. L'indirizzo IP viene mostrato sul display e sulla seriale
+
+**📖 Guida Completa Captive Portal**: Vedi [docs/CAPTIVE_PORTAL.md](docs/CAPTIVE_PORTAL.md)
 
 **Output Monitor Seriale**:
 ```
@@ -513,9 +528,18 @@ I dati di configurazione sono salvati in `/config.json` su LittleFS:
 
 ### WiFi non si connette
 
-- Verificare SSID e password
-- Il sistema creerà un AP se la connessione fallisce
-- Connettersi a "ESP32-PID-AP" (password: pid12345)
+**Con Captive Portal (Nuovo)** ✨:
+- Al primo avvio o se credenziali errate, parte automaticamente il **Captive Portal**
+- Connettiti all'Access Point: `ESP32-PID-Setup` (password: `setup123`)
+- Segui le istruzioni a schermo per configurare la tua rete
+- **Reset Credenziali**: Tieni premuto il pulsante BOOT (GPIO0) per 5 secondi
+- Dopo il reset, riparti automaticamente il captive portal
+
+**Troubleshooting Captive Portal**:
+- Se il portale non si apre automaticamente, vai a `http://192.168.4.1`
+- Disabilita dati mobili/cellulare sul dispositivo
+- Verifica che la rete sia 2.4GHz (ESP32 non supporta 5GHz)
+- Per dettagli completi: [docs/CAPTIVE_PORTAL.md](docs/CAPTIVE_PORTAL.md)
 
 ### OTA non funziona
 
