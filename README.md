@@ -7,7 +7,7 @@ Un controller PID professionale basato su ESP32 con supporto per display multipl
 - **Controller PID** completo e configurabile con anti-windup
 - **Supporto Display Multipli**:
   - TFT Touch Display 240x320 (ILI9341/ST7789)
-  - OLED 0.96" I2C (SSD1315/SSD1306) con tastiera 4x4
+  - OLED 0.96" I2C (SSD1315/SSD1306) con **navigazione a 4 pulsanti** 🎮
 - **Sensori di Temperatura Supportati**:
   - DHT22 (Temperatura e Umidità: -40°C a +80°C)
   - BME280 (Temperatura, Umidità, Pressione: -40°C a +85°C)
@@ -294,6 +294,18 @@ Il display mostra:
 - **Pagina Tuning**: Parametri PID
 - **Pagina Sensori**: Letture sensori (temp, umidità, posizione)
 - **Pagina Network**: Stato WiFi e IP
+
+#### Navigazione con Pulsanti (OLED) 🎮 NUOVO
+
+Per il display OLED con 4 pulsanti:
+- **UP** (GPIO 13): Pagina precedente
+- **DOWN** (GPIO 12): Pagina successiva
+- **SELECT** (GPIO 14): Cambia modalità AUTO/MANUAL (su pagina principale)
+- **BACK** (GPIO 27): Torna alla pagina principale
+
+I pulsanti permettono di navigare tra tutte le schermate e controllare il PID senza usare l'interfaccia web!
+
+**📖 Guida Completa**: Vedi [docs/BUTTON_NAVIGATION.md](docs/BUTTON_NAVIGATION.md)
 
 ### Calibrazione Sensori ⚡ NUOVO
 

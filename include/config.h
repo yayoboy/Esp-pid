@@ -32,9 +32,16 @@
     #define OLED_SDA  21
     #define OLED_SCL  22
     #define OLED_ADDR 0x3C
-    // 4x4 Keypad pins
-    #define KEYPAD_ROW_PINS {13, 12, 14, 27}
-    #define KEYPAD_COL_PINS {26, 25, 33, 32}
+
+    // 4 Navigation Buttons for OLED
+    #define BTN_UP      13   // Button UP - Navigate up/previous page
+    #define BTN_DOWN    12   // Button DOWN - Navigate down/next page
+    #define BTN_SELECT  14   // Button SELECT - Confirm/enter menu
+    #define BTN_BACK    27   // Button BACK - Return/cancel
+
+    // Alternative: 4x4 Keypad matrix (if using keypad instead of buttons)
+    // #define KEYPAD_ROW_PINS {13, 12, 14, 27}
+    // #define KEYPAD_COL_PINS {26, 25, 33, 32}
 #endif
 
 // Sensor Pins
@@ -81,5 +88,9 @@
 
 // File System
 #define CONFIG_FILE "/config.json"
+
+// Button Configuration (for OLED navigation)
+#define BUTTON_DEBOUNCE_MS 50      // Debounce time in milliseconds
+#define BUTTON_LONG_PRESS_MS 1000  // Long press detection time
 
 #endif // CONFIG_H

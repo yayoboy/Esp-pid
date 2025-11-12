@@ -10,6 +10,10 @@
 #include "RelayController.h"
 #include "WiFiManager.h"
 
+#ifdef USE_OLED_DISPLAY
+    #include "ButtonHandler.h"
+#endif
+
 // Global objects
 PIDController pid;
 SensorManager sensors;
@@ -19,6 +23,10 @@ OTAManager ota;
 ConfigManager configManager;
 RelayController relayController;
 WiFiManager wifiManager(&configManager);
+
+#ifdef USE_OLED_DISPLAY
+    ButtonHandler buttons;
+#endif
 
 // Variables
 double currentInput = 0.0;
@@ -35,6 +43,10 @@ const unsigned int WEB_UPDATE_INTERVAL = 1000;   // 1s
 void updatePID();
 void updateDisplay();
 void updateWebClients();
+
+#ifdef USE_OLED_DISPLAY
+void handleButtons();
+#endif
 
 void setup() {
     Serial.begin(115200);
@@ -57,6 +69,12 @@ void setup() {
     Serial.println("Initializing display...");
     display.begin();
     display.drawMessage("Initializing...");
+
+    #ifdef USE_OLED_DISPLAY
+    // Initialize Buttons for OLED navigation
+    Serial.println("Initializing navigation buttons...");
+    buttons.begin();
+    #endif
 
     // Initialize Sensors
     Serial.println("Initializing sensors...");
@@ -124,6 +142,12 @@ void setup() {
 
 void loop() {
     unsigned long now = millis();
+
+    #ifdef USE_OLED_DISPLAY
+    // Update buttons (handles debouncing and edge detection)
+    buttons.update();
+    handleButtons();
+    #endif
 
     // Update WiFi Manager (handles captive portal, reconnection, reset button)
     wifiManager.update();
@@ -213,3 +237,61 @@ void updateDisplay() {
 void updateWebClients() {
     webServer.sendUpdate();
 }
+
+#ifdef USE_OLED_DISPLAY
+void handleButtons() {
+    // Navigate pages with UP/DOWN buttons
+    if (buttons.isUpPressed()) {
+        // Go to previous page
+        DisplayPage currentPage = display.getCurrentPage();
+        int pageIndex = (int)currentPage;
+        pageIndex--;
+        if (pageIndex < 0) {
+            pageIndex = 4; // Wrap to last page (PAGE_NETWORK)
+        }
+        display.setPage((DisplayPage)pageIndex);
+
+        Serial.print("[Buttons] Page changed to: ");
+        Serial.println(pageIndex);
+    }
+
+    if (buttons.isDownPressed()) {
+        // Go to next page
+        DisplayPage currentPage = display.getCurrentPage();
+        int pageIndex = (int)currentPage;
+        pageIndex++;
+        if (pageIndex > 4) { // PAGE_NETWORK is the last page
+            pageIndex = 0; // Wrap to first page (PAGE_MAIN)
+        }
+        display.setPage((DisplayPage)pageIndex);
+
+        Serial.print("[Buttons] Page changed to: ");
+        Serial.println(pageIndex);
+    }
+
+    // SELECT button: Toggle PID mode (AUTO/MANUAL) when on main page
+    if (buttons.isSelectPressed()) {
+        DisplayPage currentPage = display.getCurrentPage();
+        if (currentPage == PAGE_MAIN) {
+            bool currentMode = pid.isAuto();
+            pid.setMode(!currentMode);
+            configManager.setAutoMode(!currentMode);
+
+            Serial.print("[Buttons] PID mode changed to: ");
+            Serial.println(!currentMode ? "AUTO" : "MANUAL");
+        }
+    }
+
+    // BACK button: Return to main page
+    if (buttons.isBackPressed()) {
+        display.setPage(PAGE_MAIN);
+        Serial.println("[Buttons] Returned to main page");
+    }
+
+    // SELECT long press: Enter configuration menu (future feature)
+    if (buttons.isSelectLongPressed()) {
+        Serial.println("[Buttons] SELECT long press - configuration mode (not implemented)");
+        // Future: enter value editing mode
+    }
+}
+#endif
